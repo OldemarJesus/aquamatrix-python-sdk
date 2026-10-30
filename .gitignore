@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+build/
+dist/
+site/
+coverage.xml
+.coverage
+
+# Local browser captures may contain credentials, cookies, or personal data.
+/temp/

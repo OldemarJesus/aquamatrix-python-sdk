@@ -1,0 +1,61 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aquamatrix-simar"
+version = "0.1.0"
+description = "Async Python client for SIMAR customer accounts on Aquamatrix"
+readme = "README.md"
+requires-python = ">=3.14"
+license = "MIT"
+authors = [{ name = "Oldemar Jesus", email = "oldemego@gmail.com" }]
+keywords = ["aquamatrix", "simar", "water", "utilities", "async"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: AsyncIO",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Home Automation",
+    "Topic :: Internet :: WWW/HTTP",
+]
+dependencies = ["httpx>=0.28,<1"]
+
+[project.optional-dependencies]
+dev = [
+    "mkdocs-material>=9.6",
+    "mkdocstrings[python]>=0.29",
+    "pytest>=8.3",
+    "pytest-asyncio>=1.0",
+    "ruff>=0.12",
+    "mypy>=1.16",
+]
+
+[project.urls]
+Homepage = "https://github.com/OldemarJesus/aquamatrix-python-sdk"
+Repository = "https://github.com/OldemarJesus/aquamatrix-python-sdk"
+Issues = "https://github.com/OldemarJesus/aquamatrix-python-sdk/issues"
+Documentation = "https://oldemarjesus.github.io/aquamatrix-python-sdk/"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aquamatrix_simar"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+mypy_path = "src"
