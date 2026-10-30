@@ -27,7 +27,7 @@ Home Assistant / MCP / Python application
 1. `login()` GETs `/SIMARnet/Account/Login`, allowing the HTTP cookie jar to retain portal cookies.
 2. The response HTML is parsed for `__RequestVerificationToken` using the standard-library HTML parser.
 3. The token, `UserCode` (NIF), password, and `RememberMe=false` are submitted as form data. A redirect into SIMARnet marks the client authenticated; credentials are not persisted.
-4. Each invoice-history request POSTs the DataTables fields and date filters directly to `GetInvoicesHistory` using the authenticated session cookies. The observed portal request does not require an anti-forgery form field for this endpoint.
+4. Each invoice-history request fetches the authenticated billing page for its anti-forgery token, then POSTs the token, DataTables fields, and date filters to `GetInvoicesHistory` using the authenticated session cookies.
 5. Portal rows are converted into immutable `Invoice` values. Pending filtering only accepts known unpaid states and excludes records with a payment date.
 
 The portal is currently observed to return dates as ISO strings for display and ASP.NET `/Date(milliseconds)/` values for raw fields. The mapper accepts either representation. Monetary values are represented by JSON numbers and converted through their string form to `Decimal`.
