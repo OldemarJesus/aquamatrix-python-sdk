@@ -5,10 +5,9 @@ from urllib.parse import parse_qs
 import httpx
 import pytest
 
-from aquamatrix_simar import AuthenticationError, Invoice, SessionExpiredError, SimarClient
+from aquamatrix_simar import AuthenticationError, Invoice, SimarClient
 
 LOGIN_PAGE = '<form><input value="login-token" name="__RequestVerificationToken"></form>'
-BILLING_PAGE = '<input name="__RequestVerificationToken" value="billing-token">'
 INVOICE_ROW = {
     "ClientCode": "12345678",
     "DocumentTypeDisplay": "Fatura",
@@ -51,13 +50,16 @@ async def test_login_fetches_token_and_submits_credentials() -> None:
 @pytest.mark.asyncio
 async def test_get_pending_invoices_maps_portal_values() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
-        if request.url.path.endswith("/Billing"):
-            return httpx.Response(200, text=BILLING_PAGE)
         if request.url.path.endswith("GetInvoicesHistory"):
             fields = parse_qs(request.content.decode())
-            assert fields["__RequestVerificationToken"] == ["billing-token"]
+            assert "__RequestVerificationToken" not in fields
             assert fields["columns[5][data]"] == ["PaymentUntilDisplay"]
+            assert fields["columns[7][orderable]"] == ["false"]
+            assert fields["columns[8][orderable]"] == ["true"]
+            assert fields["columns[9][orderable]"] == ["true"]
+            assert fields["columns[10][orderable]"] == ["false"]
             assert fields["length"] == ["100"]
+            assert fields["order[0][column]"] == ["0"]
             return httpx.Response(200, json={"data": [INVOICE_ROW]})
         raise AssertionError(f"Unexpected request: {request.method} {request.url}")
 
@@ -98,9 +100,9 @@ async def test_pending_invoice_filter_excludes_paid_and_unknown_states() -> None
     ]
 
     def handler(request: httpx.Request) -> httpx.Response:
-        if request.url.path.endswith("/Billing"):
-            return httpx.Response(200, text=BILLING_PAGE)
-        return httpx.Response(200, json={"data": rows})
+        if request.url.path.endswith("GetInvoicesHistory"):
+            return httpx.Response(200, json={"data": rows})
+        raise AssertionError(f"Unexpected request: {request.method} {request.url}")
 
     async with SimarClient("123456789", "secret", transport=httpx.MockTransport(handler)) as client:
         client._authenticated = True
@@ -118,12 +120,19 @@ async def test_invoice_methods_require_login() -> None:
 
 
 @pytest.mark.asyncio
-async def test_missing_billing_token_marks_session_expired() -> None:
+async def test_invoice_history_does_not_require_billing_page_token() -> None:
+    requests: list[httpx.Request] = []
+
     def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(200, text="<html>login page</html>")
+        requests.append(request)
+        if request.url.path.endswith("GetInvoicesHistory"):
+            return httpx.Response(200, json={"data": []})
+        raise AssertionError(f"Unexpected request: {request.method} {request.url}")
 
     async with SimarClient("123456789", "secret", transport=httpx.MockTransport(handler)) as client:
         client._authenticated = True
-        with pytest.raises(SessionExpiredError):
-            await client.get_invoices()
-        assert not client.is_authenticated
+        invoices = await client.get_invoices()
+
+    assert invoices == []
+    assert len(requests) == 1
+    assert requests[0].url.path.endswith("GetInvoicesHistory")

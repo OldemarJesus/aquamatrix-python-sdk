@@ -21,17 +21,17 @@ from aquamatrix_simar.models import Invoice
 _DATE_PATTERN = re.compile(r"/Date\((-?\d+)(?:[+-]\d{4})?\)/")
 _LOGIN_PATH = "/SIMARnet/Account/Login"
 _INVOICE_COLUMNS = (
-    ("ClientCode", "ClientCode"),
-    ("DocumentTypeDisplay", "DocumentTypeId"),
-    ("Year", "Year"),
-    ("DocumentNumber", "DocumentNumber"),
-    ("IssueDateDisplay", "IssueDate"),
-    ("PaymentUntilDisplay", "PaymentUntil"),
-    ("ValueDisplay", "Value"),
-    ("PaymentDateDisplay", "PaymentDate"),
-    ("Address", "Address"),
-    ("HasElectronicInvoice", "HasElectronicInvoice"),
-    ("Actions", "Actions"),
+    ("ClientCode", "ClientCode", False),
+    ("DocumentTypeDisplay", "DocumentTypeId", False),
+    ("Year", "Year", False),
+    ("DocumentNumber", "DocumentNumber", False),
+    ("IssueDateDisplay", "IssueDate", False),
+    ("PaymentUntilDisplay", "PaymentUntil", False),
+    ("ValueDisplay", "Value", False),
+    ("PaymentDateDisplay", "PaymentDate", False),
+    ("Address", "Address", True),
+    ("HasElectronicInvoice", "HasElectronicInvoice", True),
+    ("Actions", "Actions", False),
 )
 
 
@@ -143,7 +143,6 @@ class SimarClient:
         if limit < 1:
             raise ValueError("limit must be greater than zero")
 
-        token = await self._get_current_token()
         form: dict[str, str] = {
             "draw": "1",
             "start": str(start),
@@ -153,7 +152,6 @@ class SimarClient:
             "type": "",
             "dateFrom": (date_from or date.today() - timedelta(days=365)).isoformat(),
             "dateTo": (date_to or date.today()).isoformat(),
-            "__RequestVerificationToken": token,
         }
         form.update(_datatable_column_fields())
 
@@ -201,18 +199,6 @@ class SimarClient:
         except (KeyError, TypeError, ValueError) as exc:
             raise ProtocolError("Billing summary was missing expected counts") from exc
 
-    async def _get_current_token(self) -> str:
-        try:
-            response = await self._client.get("/SIMARnet/Billing")
-            response.raise_for_status()
-        except httpx.HTTPError as exc:
-            raise SessionExpiredError("Could not load authenticated billing page") from exc
-        token = _extract_token(response.text)
-        if token is None:
-            self._authenticated = False
-            raise SessionExpiredError("Billing page no longer contains a session token")
-        return token
-
     def _ensure_open(self) -> None:
         if self._closed:
             raise RuntimeError("Client is closed")
@@ -225,15 +211,15 @@ class SimarClient:
 
 def _datatable_column_fields() -> dict[str, str]:
     fields: dict[str, str] = {}
-    for index, (data_name, sort_name) in enumerate(_INVOICE_COLUMNS):
+    for index, (data_name, sort_name, orderable) in enumerate(_INVOICE_COLUMNS):
         prefix = f"columns[{index}]"
         fields[f"{prefix}[data]"] = data_name
         fields[f"{prefix}[name]"] = sort_name
         fields[f"{prefix}[searchable]"] = "true"
-        fields[f"{prefix}[orderable]"] = "false"
+        fields[f"{prefix}[orderable]"] = str(orderable).lower()
         fields[f"{prefix}[search][value]"] = ""
         fields[f"{prefix}[search][regex]"] = "false"
-    fields["order[0][column]"] = "4"
+    fields["order[0][column]"] = "0"
     fields["order[0][dir]"] = "desc"
     return fields
 
