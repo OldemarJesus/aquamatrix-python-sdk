@@ -27,3 +27,29 @@ class Invoice:
             "pendente",
             "por pagar",
         }
+
+
+@dataclass(frozen=True, slots=True)
+class ReadingInfo:
+    """The most recent meter reading reported by SIMAR."""
+
+    reading_date: date
+    reading_type: str
+    value: str
+
+
+@dataclass(frozen=True, slots=True)
+class NextReadingsInfo:
+    """Scheduled dates for company and customer readings."""
+
+    company_date: date
+    client_date: date
+
+
+@dataclass(frozen=True, slots=True)
+class GraphValue:
+    """A labeled monetary value returned by a SIMAR billing graph."""
+
+    label: str
+    value: Decimal
+    value_display: str | None = None

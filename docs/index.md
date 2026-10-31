@@ -2,14 +2,16 @@
 
 An async Python client for reading billing information from the SIMAR customer portal hosted by Aquamatrix.
 
-Use the SDK to establish a portal session and retrieve typed invoice data without putting Aquamatrix's HTML, CSRF tokens, or form fields into each integration.
+Use the SDK to establish a portal session and retrieve typed billing, reading, and graph data without putting Aquamatrix's HTML or portal paths into each integration.
 
 ## Capabilities
 
 - Authenticate with a SIMAR NIF and password.
-- Retrieve billing summary counts and invoice history.
-- List pending invoices with amount, issue date, year, and payment deadline.
-- Use an async context manager and typed `Invoice` values.
+- Retrieve billing summary counts and billed-value graph data.
+- Read the latest and upcoming meter-reading dates and water-shortage status.
+- Use an async context manager and typed response models.
+
+Invoice history and pending-invoice methods are temporarily disabled because the portal endpoint requires POST and currently returns HTTP 417.
 
 The client is read-only and unofficial. See [Security and limitations](guide/security.md) before connecting an account.
 

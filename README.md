@@ -38,20 +38,17 @@ async def main() -> None:
         summary = await simar.get_billing_summary()
         print(f"Portal says {summary['invoices_to_pay']} invoice(s) need payment")
 
-        for invoice in await simar.get_pending_invoices():
-            print(
-                invoice.document_number,
-                invoice.amount,
-                invoice.year,
-                invoice.issue_date,
-                invoice.payment_until,
-            )
+        reading = await simar.get_last_reading()
+        print("Last reading:", reading.reading_date, reading.value)
+
+        for entry in await simar.get_billed_values_graph():
+            print(entry.label, entry.value)
 
 
 asyncio.run(main())
 ```
 
-`get_invoices()` returns a page of history and accepts `start`, `limit`, `date_from`, and `date_to`. By default, the portal's recent one-year window is requested. Invoice amounts are `Decimal`; issue and payment dates are `datetime.date` values. This SDK currently reads data only; it does not initiate payments.
+The SDK currently supports the observed GET-based billing summary, reading, shortage, and graph endpoints. Invoice history and pending-invoice methods are temporarily disabled because the portal's history endpoint requires POST and currently returns HTTP 417. This SDK does not initiate payments.
 
 For Home Assistant, create and retain a client in the integration's coordinator lifecycle, refresh it asynchronously, and close it during unload. Do not log credentials, cookies, request bodies, or personal invoice data.
 

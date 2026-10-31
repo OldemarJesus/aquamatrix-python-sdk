@@ -17,8 +17,8 @@ Home Assistant / MCP / Python application
 
 ## Modules
 
-- `client.py`: async transport, login, token refresh, billing requests, pagination input, and wire-format mapping.
-- `models.py`: immutable public domain values; currently `Invoice` with `Decimal` amount and `date` fields.
+- `client.py`: async transport, login, and GET-only billing, reading, and graph operations.
+- `models.py`: immutable public invoice, reading, schedule, and graph value types.
 - `errors.py`: stable base, authentication, session-expiry, and protocol exceptions.
 - `__init__.py`: supported public exports.
 
@@ -27,10 +27,10 @@ Home Assistant / MCP / Python application
 1. `login()` GETs `/SIMARnet/Account/Login`, allowing the HTTP cookie jar to retain portal cookies.
 2. The response HTML is parsed for `__RequestVerificationToken` using the standard-library HTML parser.
 3. The token, `UserCode` (NIF), password, and `RememberMe=false` are submitted as form data. A redirect into SIMARnet marks the client authenticated; credentials are not persisted.
-4. Each invoice-history request fetches the authenticated billing page for its anti-forgery token, then POSTs the token, DataTables fields, and date filters to `GetInvoicesHistory` using the authenticated session cookies.
-5. Portal rows are converted into immutable `Invoice` values. Pending filtering only accepts known unpaid states and excludes records with a payment date.
+4. Invoice-history and pending-invoice methods are temporarily disabled because the observed `GetInvoicesHistory` POST currently returns HTTP 417. They raise `ProtocolError` without sending a request.
+5. Billing summary, reading information, shortage status, and billing graphs remain available through authenticated GET endpoints. Their response shapes are covered by sanitized mocked tests. Login still requires its form POST.
 
-The portal is currently observed to return dates as ISO strings for display and ASP.NET `/Date(milliseconds)/` values for raw fields. The mapper accepts either representation. Monetary values are represented by JSON numbers and converted through their string form to `Decimal`.
+The GET response models parse dates from ISO strings. Monetary graph values are represented by JSON numbers and converted through their string form to `Decimal`.
 
 ## Error behavior
 

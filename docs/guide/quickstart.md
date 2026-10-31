@@ -19,18 +19,17 @@ async def main() -> None:
         summary = await client.get_billing_summary()
         print("Invoices to pay:", summary["invoices_to_pay"])
 
-        for invoice in await client.get_pending_invoices():
-            print(
-                invoice.document_number,
-                invoice.amount,
-                invoice.issue_date,
-                invoice.payment_until,
-            )
+        reading = await client.get_last_reading()
+        print("Last reading:", reading.reading_date, reading.value)
+
+        billed_values = await client.get_billed_values_graph()
+        for entry in billed_values:
+            print(entry.label, entry.value)
 
 
 asyncio.run(main())
 ```
 
-`get_invoices()` returns one page and accepts `start`, `limit`, `date_from`, and `date_to`. The default date range covers the recent year. Amounts are `Decimal` and calendar fields are `datetime.date` objects.
+The SDK currently exposes the confirmed GET-based billing summary, reading dates, water-shortage flag, and billing graph data. Invoice history and pending-invoice methods are temporarily disabled because they require a POST request that currently returns HTTP 417.
 
 The client owns its HTTP session and cookie jar. Use `async with` or call `await client.aclose()` when finished. A session-expired response raises `SessionExpiredError`; call `login()` again when appropriate.
